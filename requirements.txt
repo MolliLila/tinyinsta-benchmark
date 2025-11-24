@@ -1,3 +1,9 @@
 Flask==3.0.0
 gunicorn==21.2.0
 google-cloud-datastore==2.19.0
+requests==2.31.0
+time
+concurrent.futures
+csv.py
+pandas==2.14.0
+matplotlib==3.8.0

@@ -1,0 +1,45 @@
+python3 - << 'EOF'
+from google.cloud import datastore
+
+client = datastore.Client()
+
+def delete_kind(kind):
+    print(f"Deleting all entities of kind: {kind}")
+    query = client.query(kind=kind)
+    batch = []
+    for entity in query.fetch():
+        batch.append(entity.key)
+        # On supprime par batch de 500 pour éviter les risques
+        if len(batch) >= 500:
+            client.delete_multi(batch)
+            print(f"Deleted {len(batch)} {kind}")
+            batch = []
+    if batch:
+        client.delete_multi(batch)
+        print(f"Deleted final {len(batch)} {kind}")
+
+delete_kind("Post")
+EOF
+
+
+python3 - << 'EOF'
+from google.cloud import datastore
+
+client = datastore.Client()
+
+def delete_kind(kind):
+    print(f"Deleting all entities of kind: {kind}")
+    query = client.query(kind=kind)
+    batch = []
+    for entity in query.fetch():
+        batch.append(entity.key)
+        if len(batch) >= 500:
+            client.delete_multi(batch)
+            print(f"Deleted {len(batch)} {kind}")
+            batch = []
+    if batch:
+        client.delete_multi(batch)
+        print(f"Deleted final {len(batch)} {kind}")
+
+delete_kind("User")
+EOF
