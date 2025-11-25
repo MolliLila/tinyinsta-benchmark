@@ -1,3 +1,6 @@
+
+## Deleting posts
+
 python3 - << 'EOF'
 from google.cloud import datastore
 
@@ -9,7 +12,6 @@ def delete_kind(kind):
     batch = []
     for entity in query.fetch():
         batch.append(entity.key)
-        # On supprime par batch de 500 pour éviter les risques
         if len(batch) >= 500:
             client.delete_multi(batch)
             print(f"Deleted {len(batch)} {kind}")
@@ -21,6 +23,8 @@ def delete_kind(kind):
 delete_kind("Post")
 EOF
 
+
+##Deleting users
 
 python3 - << 'EOF'
 from google.cloud import datastore

@@ -16,7 +16,7 @@ CSV_FILE = "../out/conc.csv"
 
 def fetch_timeline(username: str):
     try:
-        start = time.perf_counter()  # timer monotone
+        start = time.perf_counter()  
         r = requests.get(
             ENDPOINT,
             params={"user": username, "limit": LIMIT}
@@ -28,12 +28,12 @@ def fetch_timeline(username: str):
             return None, True
 
         if r.status_code != 200:
-            return latency_ms, True  # erreur HTTP
+            return latency_ms, True 
 
         return latency_ms, False
 
     except Exception:
-        return latency_ms, True  # exception 
+        return latency_ms, True 
 
 
 def run_concurrency_test(concurrency: int):
