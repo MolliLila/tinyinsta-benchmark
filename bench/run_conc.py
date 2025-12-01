@@ -8,11 +8,11 @@ ENDPOINT = APP_URL + "/api/timeline"
 USERS_PREFIX = "load"
 LIMIT = 20
 
-CONCURRENCY = 50
+CONCURRENCES = [1,10,20, 50, 100, 1000]
 RUNS = 3
 
-CSV_RAW = "../out/fanout_raw.csv"
-CSV_SUMMARY = "../out/fanout_summary.csv"
+CSV_RAW = "../out/conc_raw.csv"
+CSV_SUMMARY = "../out/conc_summary.csv"
 
 
 def fetch_timeline(username: str):
@@ -36,7 +36,7 @@ def fetch_timeline(username: str):
         return username, start, end, None, True
 
 
-def run_fanout_test(concurrency: int, run: int, raw_writer):
+def run_concurrency_test(concurrency: int, run: int, raw_writer):
 
     usernames = [f"{USERS_PREFIX}{i}" for i in range(1, concurrency + 1)]
 

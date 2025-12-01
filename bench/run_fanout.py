@@ -45,7 +45,7 @@ def fetch_timeline(username: str):
         return username, start, end, None, True
 
 
-def run_post_test(concurrency: int, run: int, raw_writer):
+def run_fanout_test(concurrency: int, run: int, raw_writer):
 
     usernames = [f"{USERS_PREFIX}{i}" for i in range(1, concurrency + 1)]
 
@@ -103,7 +103,7 @@ def main():
             
             print(f"Run {run}... ", end="", flush=True)
 
-            avg_time, failed = run_post_test(CONCURRENCY, run, raw_writer)
+            avg_time, failed = run_fanout_test(CONCURRENCY, run, raw_writer)
 
             sum_writer.writerow([
                     10,
