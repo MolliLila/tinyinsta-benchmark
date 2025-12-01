@@ -4,7 +4,7 @@ import numpy as np
 import os
 
 DIR_OUTPUT = "../out/"
-CSV_FILE = os.path.join(DIR_OUTPUT, "conc.csv")
+CSV_FILE = os.path.join(DIR_OUTPUT, "conc_summary.csv")
 OUTPUT_FILE = os.path.join(DIR_OUTPUT, "conc.png")
 
 def plot_conc(show=False):
@@ -15,21 +15,33 @@ def plot_conc(show=False):
     # Lecture du CSV
     df = pd.read_csv(CSV_FILE)
 
+   
+    
+    # Convertir AVG_TIME en float
+    df["AVG_TIME"] = pd.to_numeric(df["AVG_TIME"], errors="coerce")
+
     # Filtrer les runs valides
     df = df[df["FAILED"] == 0]
+        
+    # Retirer AVG_TIME manquants
+    df = df.dropna(subset=["AVG_TIME"])
 
-    # Calcul des moyennes et écarts-types
-    grouped = df.groupby("PARAM")["AVG_TIME"].agg(["mean", "std"]).reset_index()
+    # Convertir PARAM en numérique
+    df["PARAM"] = pd.to_numeric(df["PARAM"], errors="coerce")
+
+    # Calcul de la moyenne seulement
+    grouped = df.groupby("PARAM")["AVG_TIME"].mean().reset_index()
     grouped = grouped.sort_values("PARAM")
 
     positions = np.arange(len(grouped))
-    means = grouped["mean"]
-    stds = grouped["std"]
+    means = grouped["AVG_TIME"]
     labels = grouped["PARAM"]
 
     plt.style.use("seaborn-v0_8-deep")
     plt.figure(figsize=(12, 6))
-    plt.bar(positions, means, yerr=stds, capsize=5, width=0.6, color="#4C72B0")
+
+    # Barres SANS écart-type
+    plt.bar(positions, means, width=0.6, color="#4C72B0")
 
     plt.xticks(positions, labels)
     plt.xlabel("Utilisateurs concurrents")
@@ -37,9 +49,10 @@ def plot_conc(show=False):
     plt.title("Temps moyen par requête selon la concurrence")
     plt.grid(axis='y', linestyle='--', alpha=0.5)
 
-    # Ajouter les valeurs sur les barres
+    
+    # Ajouter la moyenne au-dessus des barres
     for i, v in enumerate(means):
-        plt.text(i, v + stds.iloc[i] + 0.02 * v, f"{v:.2f}", ha='center', fontsize=9)
+        plt.text(i, v + 0.01 * v, f"{v:.3f}", ha='center', fontsize=9)
 
     plt.tight_layout()
 
