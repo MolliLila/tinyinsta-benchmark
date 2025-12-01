@@ -1,4 +1,5 @@
 
+## Copied on google cloud
 ## Deleting posts
 
 python3 - << 'EOF'

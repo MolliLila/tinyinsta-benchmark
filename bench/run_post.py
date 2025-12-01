@@ -3,164 +3,123 @@ import requests
 import csv
 import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
-from google.cloud import datastore
 
 
 # ---------------- Configuration ----------------
 
 APP_URL = "https://tinyinsta-benchmark-479218.ew.r.appspot.com"
-SEED_TOKEN = "change-me-seed-token"
-
-USERS = 1000
-PREFIX = "load"
-FOLLOWERS = 20
+ENDPOINT = APP_URL + "/api/timeline"
+USERS_PREFIX = "load"
+LIMIT = 20
+POSTS_PER_USER_VALUES = [10,100,1000]
 CONCURRENCY = 50
 RUNS = 3
-
-POSTS_PER_USER_VALUES = [10, 100, 1000]
-
-CSV_FILE = "../out/post.csv"
+USERS = 1000
 
 
-# ---------------- Utility: Clear posts ----------------
+CSV_RAW = "../out/post_raw.csv"
+CSV_SUMMARY = "../out/post_summary.csv"
 
-def clear_posts():
-    print(" Suppression des Posts...")
-    client = datastore.Client()
-    query = client.query(kind="Post")
+## python seed.py --users 1000 --posts 100 --follows-min 0 --follows-max 0
+## python seed.py --users 1000 --posts 100000 --follows-min 0 --follows-max 0
+## python seed.py --users 1000 --posts 1000000 --follows-min 0 --follows-max 0
 
-    count = 0
-    batch = []
+def fetch_timeline(username: str):
+    start = time.time()
 
-    for entity in query.fetch():
-        batch.append(entity.key)
-        count += 1
-
-        if len(batch) >= 500:
-            client.delete_multi(batch)
-            batch = []
-
-    if batch:
-        client.delete_multi(batch)
-
-    print(f" Posts supprimés : {count}")
-
-
-# ---------------- Utility: Seed posts ----------------
-
-def seed_posts(total_posts):
-    print(f" Seed de {total_posts} posts...")
-
-    url = f"{APP_URL}/admin/seed"
-
-    # On divise en batches pour éviter les timeouts
-    BATCH = 100
-    remaining = total_posts
-
-    while remaining > 0:
-        posts = min(BATCH, remaining)
-        remaining -= posts
-
-        params = {
-            "users": USERS,
-            "posts": posts,
-            "prefix": PREFIX,
-            "follows_min": 0,
-            "follows_max": 0
-        }
-
-        resp = requests.post(
-            url,
-            headers={"X-Seed-Token": SEED_TOKEN},
-            params=params
-        )
-
-        if resp.status_code != 200:
-            print(" Seed failed:", resp.text)
-            return False
-
-        print(f"   Batch seed : {posts} posts")
-
-    print(" Seed terminé.\n")
-    return True
-
-
-# ---------------- Benchmark ----------------
-
-def fetch_timeline(username):
     try:
-        start = time.perf_counter()
-        r = requests.get(f"{APP_URL}/api/timeline?user={username}&limit=20", timeout=10)
-        latency = (time.perf_counter() - start) * 1000
+        r = requests.get(ENDPOINT, params={"user": username, "limit": LIMIT})
+        end = time.time()
+        duration = end - start
 
-        if r.status_code != 200 or latency <= 0:
-            return None, True
+        if duration <= 0:
+            return username, start, end, None, True
 
-        return latency, False
-    except:
-        return None, True
+        if r.status_code != 200:
+            return username, start, end, duration, True
+
+        return username, start, end, duration, False
+
+    except Exception:
+        end = time.time()
+        return username, start, end, None, True
 
 
-def run_benchmark():
-    usernames = [f"{PREFIX}1"] * CONCURRENCY
-    latencies = []
-    failed = False
+def run_post_test(concurrency: int, run: int, raw_writer):
 
-    with ThreadPoolExecutor(max_workers=CONCURRENCY) as exe:
-        futures = [exe.submit(fetch_timeline, u) for u in usernames]
+    usernames = [f"{USERS_PREFIX}{i}" for i in range(1, concurrency + 1)]
+
+    durations_valid = []
+    failed_global = False
+
+    with ThreadPoolExecutor(max_workers=concurrency) as executor:
+        futures = [executor.submit(fetch_timeline, user) for user in usernames]
 
         for f in as_completed(futures):
-            latency, error = f.result()
-            if error or latency is None:
-                failed = True
+            user, start, end, duration, failed = f.result()
+
+            # brut results
+            raw_writer.writerow([
+                concurrency,
+                run,
+                user,
+                f"{start:.6f}",
+                f"{end:.6f}",
+                "" if duration is None else f"{duration:.6f}",
+                int(failed)
+            ])
+
+            # si une requête échoue → FAILED=1
+            if failed or duration is None:
+                failed_global = True
             else:
-                latencies.append(latency)
+                durations_valid.append(duration)
 
-    if latencies:
-        avg = sum(latencies) / len(latencies)
+    # moyenne sur les requêtes réussies
+    if durations_valid:
+        avg_time = sum(durations_valid) / len(durations_valid)
     else:
-        avg = None
-        failed = True
+        avg_time = None 
 
-    return avg, failed
+    return avg_time, failed_global
+
 
 
 # ---------------- Main: Expérience Posts ----------------
 
 def main():
-    with open(CSV_FILE, "w", newline="") as f:
-        writer = csv.writer(f)
-        writer.writerow(["PARAM", "AVG_TIME", "RUN", "FAILED"])
+    print("== Benchmark Posts ==\n")
 
-        for posts_per_user in POSTS_PER_USER_VALUES:
-            total_posts = posts_per_user * USERS
+    with open(CSV_RAW, "a", newline="") as raw_file, \
+         open(CSV_SUMMARY, "a", newline="") as sum_file:
 
-            print(f"==============================")
-            print(f" TEST : {posts_per_user} posts/user → {total_posts} posts")
-            print(f"=============================")
+        raw_writer = csv.writer(raw_file)
+        sum_writer = csv.writer(sum_file)
 
-            # 1) Clear posts
-            clear_posts()
+        raw_writer.writerow(["PARAM", "RUN", "USER", "START", "END", "DURATION", "FAILED"])
+        sum_writer.writerow(["PARAM", "RUN", "AVG_TIME", "FAILED"])
+        
+        for run in range(1, RUNS + 1):
+            
+            print(f"Run {run}... ", end="", flush=True)
 
-            # 2) Seed new number of posts
-            ok = seed_posts(total_posts)
-            if not ok:
-                print(" Impossible de seed. On passe au prochain test.")
-                continue
+            avg_time, failed = run_post_test(CONCURRENCY, run, raw_writer)
 
-            # 3) Bench 3 runs
-            for run in range(1, RUNS + 1):
-                print(f"  Run {run}...")
-                avg, failed = run_benchmark()
+            sum_writer.writerow([
+                    100,
+                    run,
+                    f"{avg_time:.3f}" if avg_time else "",
+                    int(failed)
+                ])
 
-                if failed or avg is None:
-                    writer.writerow([posts_per_user, "", run, 1])
-                    print("   → FAILED")
-                else:
-                    writer.writerow([posts_per_user, f"{avg:.2f}", run, 0])
-                    print(f"   → {avg:.2f} ms")
+            if avg_time:
+                print(f"{avg_time:.4f} s")
+            else:
+                print("FAILED")
 
-    print("\n Benchmark terminé. Résultats écrits dans post.csv")
+    print("\nBenchmark terminé.")
+    print(f"  → Données brutes : {CSV_RAW}")
+    print(f"  → Résumé : {CSV_SUMMARY}")
 
 
 if __name__ == "__main__":
