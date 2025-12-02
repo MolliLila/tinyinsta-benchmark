@@ -20,7 +20,7 @@ USERS = 1000
 CSV_RAW = "../out/post_raw.csv"
 CSV_SUMMARY = "../out/post_summary.csv"
 
-## python seed.py --users 1000 --posts 100 --follows-min 0 --follows-max 0
+## python seed.py --users 1000 --posts 10000 --follows-min 0 --follows-max 0
 ## python seed.py --users 1000 --posts 100000 --follows-min 0 --follows-max 0
 ## python seed.py --users 1000 --posts 1000000 --follows-min 0 --follows-max 0
 
