@@ -12,6 +12,7 @@ ENDPOINT = APP_URL + "/api/timeline"
 USERS_PREFIX = "load"
 LIMIT = 20
 POSTS_PER_USER_VALUES = [10,100,1000]
+RUN_NUMBER = 3
 CONCURRENCY = 50
 RUNS = 3
 USERS = 1000
@@ -20,7 +21,7 @@ USERS = 1000
 CSV_RAW = "../out/post_raw.csv"
 CSV_SUMMARY = "../out/post_summary.csv"
 
-## python seed.py --users 1000 --posts 10000 --follows-min 0 --follows-max 0
+## python seed.py --users 1000 --posts 10000 --follows-min 20 --follows-max 20
 ## python seed.py --users 1000 --posts 100000 --follows-min 0 --follows-max 0
 ## python seed.py --users 1000 --posts 1000000 --follows-min 0 --follows-max 0
 
@@ -60,7 +61,7 @@ def run_post_test(concurrency: int, run: int, raw_writer):
 
             # brut results
             raw_writer.writerow([
-                concurrency,
+                POSTS_PER_USER_VALUES[RUN_NUMBER - 1],
                 run,
                 user,
                 f"{start:.6f}",
@@ -106,7 +107,7 @@ def main():
             avg_time, failed = run_post_test(CONCURRENCY, run, raw_writer)
 
             sum_writer.writerow([
-                    100,
+                    POSTS_PER_USER_VALUES[RUN_NUMBER - 1],
                     run,
                     f"{avg_time:.3f}" if avg_time else "",
                     int(failed)

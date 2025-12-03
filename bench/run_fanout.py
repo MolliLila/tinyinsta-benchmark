@@ -11,7 +11,8 @@ APP_URL = "https://tinyinsta-benchmark-479218.ew.r.appspot.com"
 ENDPOINT = APP_URL + "/api/timeline"
 USERS_PREFIX = "load"
 LIMIT = 20
-POSTS_PER_USER_VALUES = [10,100,1000]
+FOLLOWERS_PER_USER_VALUES = [10,50,100]
+RUN_NUMBER = 3
 CONCURRENCY = 50
 RUNS = 3
 USERS = 1000
@@ -60,7 +61,7 @@ def run_fanout_test(concurrency: int, run: int, raw_writer):
 
             # brut results
             raw_writer.writerow([
-                concurrency,
+                FOLLOWERS_PER_USER_VALUES[RUN_NUMBER - 1],
                 run,
                 user,
                 f"{start:.6f}",
@@ -106,7 +107,7 @@ def main():
             avg_time, failed = run_fanout_test(CONCURRENCY, run, raw_writer)
 
             sum_writer.writerow([
-                    10,
+                    FOLLOWERS_PER_USER_VALUES[RUN_NUMBER - 1],
                     run,
                     f"{avg_time:.3f}" if avg_time else "",
                     int(failed)
