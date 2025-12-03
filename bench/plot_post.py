@@ -5,7 +5,7 @@ import os
 
 DIR_OUTPUT = "../out/"
 CSV_FILE = os.path.join(DIR_OUTPUT, "post_summary.csv")
-OUTPUT_FILE = os.path.join(DIR_OUTPUT, "conc.png")
+OUTPUT_FILE = os.path.join(DIR_OUTPUT, "post.png")
 
 def plot_conc(show=False):
     if not os.path.exists(CSV_FILE):
