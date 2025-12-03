@@ -72,9 +72,9 @@ def main():
     end = time.time()
 
     print("-----------------------------------------------------")
-    print(f"✔ Total OK : {total_ok:,}")
-    print(f"✔ Temps total : {end - start:.1f} sec ({(end-start)/60:.1f} min)")
-    print(f"✔ Débit moyen : {TOTAL_POSTS / (end - start):.1f} posts/sec")
+    print(f" Total OK : {total_ok:,}")
+    print(f" Temps total : {end - start:.1f} sec ({(end-start)/60:.1f} min)")
+    print(f" Débit moyen : {TOTAL_POSTS / (end - start):.1f} posts/sec")
     print("-----------------------------------------------------")
 
 if __name__ == "__main__":
